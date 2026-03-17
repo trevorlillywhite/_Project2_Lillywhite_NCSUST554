@@ -21,3 +21,28 @@ class SparkDataCheck():
         # Create .df attribute with the df argument
         self.df = df
         
+    # Create two @classmethods: .from_csv() and .from_pandas()
+    @classmethod
+    def from_csv(cls, session, filepath):
+        # Create DataFrame from csv using file path provided
+        df = session.read.load(filepath,
+                             format = 'csv', 
+                             sep = ',',
+                             inferSchema = 'True',
+                             header = 'True')
+        return cls(df)
+    
+    @classmethod
+    def from_pandas(cls, session, pandas_df):
+        # Create SQL DataFrame from pandas DataFrame provided
+        df = session.createDataFrame(pandas_df)
+        return cls(df)
+    
+
+    
+    
+    
+    
+    
+if __name__=="__main__":
+    main()
