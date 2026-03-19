@@ -38,7 +38,8 @@ class SparkDataCheck():
         df_from_pandas = session.createDataFrame(pandas_df)
         return cls(df_from_pandas)
     
-    # Create three validation methods
+# Create three validation methods
+    # Validate if column values are within specified limits (inclusive)
     def check_within_limits(self, column: str, 
                             lower: float = None, 
                             upper: float = None):
@@ -72,9 +73,9 @@ class SparkDataCheck():
         # Check if column contents are non-numeric
         numeric_types = ['float', 'int', 'longint', 'bigint', 'double', 'integer']
         if dict(self.df.dtypes)[column] not in numeric_types:
-            print('Warning: Specified column is non-numeric.', 
+            print('Warning: Column', column, 'is non-numeric.', 
                   'Limit check was not performed.')
-            return self.df
+            return self
         
         # Set pseudo-bounds if not specified in argument
         #    (enables .between() method)
@@ -86,12 +87,35 @@ class SparkDataCheck():
         # Execute method: add new column with boolean results of .between() method
         self.df = self.df.withColumn(column + '_within_limits',
                                      F.col(column).between(lower,upper))
-        
         return self
     
+    # Validate if each value in a string column falls witin a user specified
+        # set of levels and returns the dataframe with an appended column of
+        # Boolean values
+    def check_string(self, column: str, 
+                     levels: list[str]):
+        
+        # Check that column name is a string and is in the DataFrame
+        if isinstance(column, str):
+            if column not in self.df.columns:
+                print('Error: Invalid column (not in DataFrame)')
+                return None
+        else:
+            print('Error: Column name must be a string')
+            return None
     
-    
-    
+        # Check if column is string type
+        if dict(self.df.dtypes)[column] != 'string':
+            print('Warning: Column', column, 'is not string type.') 
+            return self
+        
+                    
+        # Execute method: add new column with boolean results if value in list
+        self.df = self.df.withColumn(column + '_value_in_list',
+                                     F.col(column).isin(levels))
+        
+        return self
+        
     
 if __name__=="__main__":
     main()
