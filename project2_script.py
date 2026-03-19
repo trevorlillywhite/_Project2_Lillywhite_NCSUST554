@@ -39,7 +39,7 @@ class SparkDataCheck():
         return cls(df_from_pandas)
     
 # Create three validation methods
-    # Validate if column values are within specified limits (inclusive)
+    # Validation Method 1: are column values within specified limits (inclusive)?
     def check_within_limits(self, column: str, 
                             lower: float = None, 
                             upper: float = None):
@@ -89,9 +89,8 @@ class SparkDataCheck():
                                      F.col(column).between(lower,upper))
         return self
     
-    # Validate if each value in a string column falls witin a user specified
-        # set of levels and returns the dataframe with an appended column of
-        # Boolean values
+    # Validation Method 2: Are values in a string column within a user-specified
+        # set of levels (list)?
     def check_string(self, column: str, 
                      levels: list[str]):
         
@@ -116,6 +115,23 @@ class SparkDataCheck():
         
         return self
         
+    # Validation Method 3: Is each value in a column Null?
+    def check_Null(self, column: str):
+        
+        # Check that column name is a string and is in the DataFrame
+        if isinstance(column, str):
+            if column not in self.df.columns:
+                print('Error: Invalid column (not in DataFrame)')
+                return None
+        else:
+            print('Error: Column name must be a string')
+            return None        
+                    
+        # Execute method: add new column with boolean results if value is Null
+        self.df = self.df.withColumn(column + '_is_Null',
+                                     F.col(column).isNull())
+        
+        return self
     
 if __name__=="__main__":
     main()
