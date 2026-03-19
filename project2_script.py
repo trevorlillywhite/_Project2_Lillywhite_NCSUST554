@@ -25,20 +25,69 @@ class SparkDataCheck():
     @classmethod
     def from_csv(cls, session, filepath):
         # Create DataFrame from csv using file path provided
-        df = session.read.load(filepath,
+        df_from_csv = session.read.load(filepath,
                              format = 'csv', 
                              sep = ',',
                              inferSchema = 'True',
                              header = 'True')
-        return cls(df)
+        return cls(df_from_csv)
     
     @classmethod
     def from_pandas(cls, session, pandas_df):
         # Create SQL DataFrame from pandas DataFrame provided
-        df = session.createDataFrame(pandas_df)
-        return cls(df)
+        df_from_pandas = session.createDataFrame(pandas_df)
+        return cls(df_from_pandas)
     
-
+    # Create three validation methods
+    def check_within_limits(self, column: str, 
+                            lower: float = None, 
+                            upper: float = None):
+        # Check bounds for validity
+            # At least one bound must be specified. 
+            # Specified bounds must be numeric (not strings)
+            # If both are specified, upper must be greater than lower
+        if upper == None and lower == None:
+            print('Error: Must specify at least one upper or lower bound.')
+            return None
+        elif isinstance(upper, str) or isinstance(lower, str):
+            print('Error: Bounds must be numeric.')
+            return None
+        elif lower == upper:
+            print('Error: Bounds must differ.')
+            return None
+        elif not (upper == None or lower == None):
+            if lower > upper:
+                print('Error: Lower bound cannot be greater than upper bound')
+                return None
+        
+        # Check that column name is a string and is in the DataFrame
+        if isinstance(column, str):
+            if column not in self.df.columns:
+                print('Error: Invalid column (not in DataFrame)')
+                return None
+        else:
+            print('Error: Column name must be a string')
+            return None
+        
+        # Check if column contents are non-numeric
+        numeric_types = ['float', 'int', 'longint', 'bigint', 'double', 'integer']
+        if dict(self.df.dtypes)[column] not in numeric_types:
+            print('Warning: Specified column is non-numeric.', 
+                  'Limit check was not performed.')
+            return self.df
+        
+        # Set pseudo-bounds if not specified in argument
+        #    (enables .between() method)
+        if upper == None:
+            upper = self.df.select(F.max(column)).collect()[0][0]
+        if lower == None:
+            lower = self.df.select(F.min(column)).collect()[0][0]
+            
+        # Execute method: add new column with boolean results of .between() method
+        self.df = self.df.withColumn(column + '_within_limits',
+                                     F.col(column).between(lower,upper))
+        
+        return self
     
     
     
