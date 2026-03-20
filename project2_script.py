@@ -133,5 +133,99 @@ class SparkDataCheck():
         
         return self
     
+# Create two summarization methods
+    # Report the min and max of a numeric column supplied by the user 
+        # with one optional grouping variable
+    def find_minmax(self, column: str = None, group: str = None):
+        numeric_types = ['float', 'int', 'longint', 'bigint', 'double', 'integer']
+        
+        # Check that column name is a string and is in the DataFrame
+        if column == None:
+            pass
+        elif isinstance(column, str):
+            if column not in self.df.columns:
+                print('Error: Invalid column (not in DataFrame)')
+                return None
+            else:
+                # Check if column contents are numeric
+                if dict(self.df.dtypes)[column] not in numeric_types:
+                    print('Error: Column', column, 'is non-numeric.', 
+                          'Provide a numeric column.')
+                    return None
+        else:
+            print('Error: Column name must be a string')
+            return None
+        
+        # Check that group name is a string and is in the DataFrame
+        if group == None:
+            pass
+        elif isinstance(group, str):
+            if group not in self.df.columns:
+                print('Error: Invalid group (not in DataFrame)')
+                return None
+        else:
+            print('Error: Group name must be a string')
+            return None
+                
+        # Execute method: Find min/max of specified column. Group if specified.
+            # Find min/max of all numeric columns if no column is specified. 
+        if column != None:
+            if group == None:
+                max = self.df.agg(F.max(column)).collect()[0][0]
+                min = self.df.agg(F.min(column)).collect()[0][0]
+                data = {'Min': [min], 
+                        'Max': [max]}
+                p_df = pd.DataFrame(data, index = [column])
+                return p_df
+            else:
+                max = pd.DataFrame(self.df.groupBy(group).agg(F.max(column))\
+                        .alias(column+'_max').collect()[:][:])
+                min = pd.DataFrame(self.df.groupBy(group).agg(F.min(column))\
+                        .alias(column+'_min').collect()[:][:])
+                data = list(zip(min[1], max[1]))
+                p_df = pd.DataFrame(data,
+                                    index=max.iloc[:,0],
+                                    columns=[column+'_min', column+'_max'])\
+                         .sort_index()
+                p_df.index.name = group
+                return p_df
+            
+        # If no column name is provided, calculate min/max for each numeric column
+        else:
+            # Determine which columns are numeric (will iterate over this list)
+            list_numeric_col = []
+            for col, typ in self.df.dtypes:
+                if typ in numeric_types:
+                    list_numeric_col.append(col)
+                            
+            if group == None:
+                p_df = pd.DataFrame()
+                for col in list_numeric_col:
+                    max = self.df.agg(F.max(col)).collect()[0][0]
+                    min = self.df.agg(F.min(col)).collect()[0][0]
+                    data = pd.DataFrame([[min, max]], index=[col])
+                    p_df = pd.concat([p_df, data])
+                p_df.columns = ['min', 'max']
+                return p_df
+                
+            else:  # NEED TO DO!!!!!!!!!!
+                
+                
+                
+                max = pd.DataFrame(self.df.groupBy(group).agg(F.max(column))\
+                        .alias(column+'_max').collect()[:][:])
+                min = pd.DataFrame(self.df.groupBy(group).agg(F.min(column))\
+                        .alias(column+'_min').collect()[:][:])
+                data = list(zip(min[1], max[1]))
+                p_df = pd.DataFrame(data,
+                                    index=max.iloc[:,0],
+                                    columns=[column+'_min', column+'_max'])\
+                         .sort_index()
+                p_df.index.name = group
+                return p_df
+            print('TBD')
+            
+        
+    
 if __name__=="__main__":
     main()
