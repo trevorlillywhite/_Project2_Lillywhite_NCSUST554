@@ -39,7 +39,7 @@ class SparkDataCheck():
         return cls(df_from_pandas)
     
 # Create three validation methods
-    # Validation Method 1: are column values within specified limits (inclusive)?
+    # Validation Method 1: Are column values within specified limits?
     def check_within_limits(self, column: str, 
                             lower: float = None, 
                             upper: float = None):
@@ -130,14 +130,14 @@ class SparkDataCheck():
         # Execute method: add new column with boolean results if value is Null
         self.df = self.df.withColumn(column + '_is_Null',
                                      F.col(column).isNull())
-        
         return self
     
 # Create two summarization methods
-    # Report the min and max of a numeric column supplied by the user 
-        # with one optional grouping variable
+    # Summarization Method 1: Report the min and max of a numeric column 
+        # supplied by the user with one optional grouping variable
     def find_minmax(self, column: str = None, group: str = None):
-        numeric_types = ['float', 'int', 'longint', 'bigint', 'double', 'integer']
+        numeric_types = ['float', 'int', 'longint', 
+                         'bigint', 'double', 'integer']
         
         # Check that column name is a string and is in the DataFrame
         if column == None:
@@ -208,23 +208,27 @@ class SparkDataCheck():
                 p_df.columns = ['min', 'max']
                 return p_df
                 
-            else:  # NEED TO DO!!!!!!!!!!
-                
-                
-                
-                max = pd.DataFrame(self.df.groupBy(group).agg(F.max(column))\
-                        .alias(column+'_max').collect()[:][:])
-                min = pd.DataFrame(self.df.groupBy(group).agg(F.min(column))\
-                        .alias(column+'_min').collect()[:][:])
-                data = list(zip(min[1], max[1]))
-                p_df = pd.DataFrame(data,
-                                    index=max.iloc[:,0],
-                                    columns=[column+'_min', column+'_max'])\
-                         .sort_index()
-                p_df.index.name = group
+            else:
+                p_df = pd.DataFrame()
+                for col in list_numeric_col:
+                    max = pd.DataFrame(self.df.groupBy(group)\
+                                           .agg(F.max(col))\
+                                           .collect()[:][:])
+                    min = pd.DataFrame(self.df.groupBy(group)\
+                                           .agg(F.min(col))\
+                                           .collect()[:][:])
+                    
+                    data = list(zip(min[1], max[1]))
+                    
+                    p_df_partial = pd.DataFrame(data,
+                                        index=max.iloc[:,0],
+                                        columns=[col+'_min', col+'_max'])\
+                                     .sort_index()                    
+                    
+                    p_df = pd.concat([p_df, p_df_partial], axis=1)
+                    
                 return p_df
-            print('TBD')
-            
+        
         
     
 if __name__=="__main__":
