@@ -229,7 +229,40 @@ class SparkDataCheck():
                     
                 return p_df
         
+    # Summarization Method 2: Report the counts for one or two string columns 
+    def find_counts(self, column1: str, column2: str = None):
+        # Check that column is string type and in the DataFrame
+        for column in [column1, column2]:
+            if column == None:
+                pass
+            elif isinstance(column, str):
+                if column not in self.df.columns:
+                    print('Error: Invalid column (not in DataFrame)')
+                    return None
+                else:
+                    # Check if column contents are string type
+                    if dict(self.df.dtypes)[column] != 'string':
+                        print('Error: Column', column, 'is numeric.', 
+                              'Provide a string column.')
+                        return None
+            else:
+                print('Error: Column name must be a string')
+                return None
         
+        # Execute method: Determine counts for each specified column
+        p_df = pd.DataFrame()
+        for column in [column1, column2]:
+            if column == None:
+                pass
+            else:
+                counts = self.df.groupBy(column).count()
+                counts = counts.sort(counts['count'], ascending = False)
+                temp_df = counts.toPandas()
+                temp_df.rename(columns={'count': (column + '_count')}, 
+                              inplace = True)
+                p_df = pd.concat([p_df, temp_df], axis=1)
+        return p_df
+    
     
 if __name__=="__main__":
     main()
