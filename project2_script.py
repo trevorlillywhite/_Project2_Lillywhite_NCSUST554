@@ -36,6 +36,9 @@ class SparkDataCheck():
     def from_pandas(cls, session, pandas_df):
         # Create SQL DataFrame from pandas DataFrame provided
         df_from_pandas = session.createDataFrame(pandas_df)
+        
+        # Convert numpy.NaN to NULL
+        df_from_pandas = df_from_pandas.replace(float('nan'), None)
         return cls(df_from_pandas)
     
 # Create three validation methods
