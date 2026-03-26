@@ -1,6 +1,6 @@
 # Project 2 - NCSU ST 554
 # Author: Trevor Lillywhite
-# Due Date: March 24, 2026
+# Due Date: March 24, 2026 (extended to March 26, 2026)
 
 # Part I - Creating a Class
 #    In this part, we will create a .py script with a custom class
